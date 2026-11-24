@@ -296,6 +296,22 @@
     return d;
   }
 
+  /* El navegador puede aceptar el token y no guardarlo: pasa en las pestañas
+     privadas de Safari. Escribimos y releemos para saberlo de verdad. */
+  function leeLocal(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function guardaLocal(k, v) {
+    try { localStorage.setItem(k, v); return localStorage.getItem(k) === v; }
+    catch (e) { return false; }
+  }
+  function almacenaBien() {
+    try {
+      localStorage.setItem("__rc__", "1");
+      var ok = localStorage.getItem("__rc__") === "1";
+      localStorage.removeItem("__rc__");
+      return ok;
+    } catch (e) { return false; }
+  }
+
   /* ============ base64 con acentos ============ */
   function aB64(txt) {
     var bytes = new TextEncoder().encode(txt), bin = "";
@@ -792,6 +808,7 @@
       b.onclick = function () {
         try { localStorage.removeItem("rc_token"); localStorage.removeItem("rc_yo"); } catch (e) {}
         token = null; yo = null;
+        $("avisos").textContent = "";
         marcarEstado("", "Solo mirando");
         pintarAjustes(); render();
       };
@@ -828,9 +845,16 @@
           var r = await leerRemoto();
           D = r.datos; sha = r.sha;
           yo = sel.value;
-          try { localStorage.setItem("rc_token", v); localStorage.setItem("rc_yo", yo); } catch (e) {}
+          var persiste = guardaLocal("rc_token", v) && guardaLocal("rc_yo", yo);
           marcarEstado("ok", "Guardado");
           pintarAjustes(); render();
+          if (!persiste) {
+            $("avisos").textContent = "";
+            aviso("Este navegador ha aceptado el token pero no lo está guardando, así que al cerrar " +
+              "la ventana lo perderás. Casi siempre es una pestaña privada de Safari, o la página " +
+              "abierta desde el navegador en vez de desde el icono de la pantalla de inicio. " +
+              "Mientras no cierres, puedes usarla con normalidad.", true);
+          }
         } catch (e) {
           token = anterior;
           ok.disabled = false; ok.textContent = "Conectar";
@@ -854,6 +878,13 @@
     a.target = "_blank"; a.rel = "noopener";
     info.appendChild(a);
     c.appendChild(info);
+
+    var puede = almacenaBien();
+    var diag = el("div", "aviso" + (puede ? "" : " malo"));
+    diag.appendChild(el("p", null, puede
+      ? "Este navegador guarda el token entre visitas. Si alguna vez te lo vuelve a pedir, será porque has borrado los datos de navegación o porque han pasado muchas semanas sin abrir la página."
+      : "Este navegador NO está guardando nada entre visitas, así que te pedirá el token cada vez que cierres. Suele ser una pestaña privada de Safari. Ábrela en una pestaña normal, o mejor desde el icono que hayas añadido a la pantalla de inicio, y vuelve a pegar el token ahí."));
+    c.appendChild(diag);
   }
 
   /* ============ render ============ */
@@ -924,7 +955,8 @@
     if (cola.length) { e.preventDefault(); e.returnValue = ""; }
   });
 
-  try { token = localStorage.getItem("rc_token") || null; yo = localStorage.getItem("rc_yo") || null; } catch (e) {}
+  token = leeLocal("rc_token") || null;
+  yo = leeLocal("rc_yo") || null;
   marcarEstado("", token ? "Cargando…" : "Solo mirando");
   render();
 
