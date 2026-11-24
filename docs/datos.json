@@ -274,6 +274,11 @@
     "asignado": null,
     "hechos": [],
     "omitida": false
+   },
+   "sal1": {
+    "asignado": "ambos",
+    "hechos": [],
+    "omitida": false
    }
   }
  }
