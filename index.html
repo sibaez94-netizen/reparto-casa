@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reparto de casa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  /* Reparto de casa — tablero semanal para dos personas, guardado en GitHub.
+     Layout: cabecera con el balance, tres pestañas debajo, una columna. */
+  :root {
+    --bg: #f4f5f2; --surface: #ffffff; --surface-2: #fafbf8;
+    --ink: #1a1f1d; --muted: #6a736e; --line: #e2e6e0; --line-soft: #edf0ea;
+    --a: #0d7267; --b: #b1560f; --accent: #38506b; --warn: #b3261e; --ok: #15803d; --none: #c3c9c3;
+    --display: "Bricolage Grotesque", Georgia, serif;
+    --body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #13161a; --surface: #1b1f24; --surface-2: #20252b;
+      --ink: #e9ece9; --muted: #99a39d; --line: #2d343b; --line-soft: #242a30;
+      --a: #4fb8ab; --b: #e09050; --accent: #8fb0d4; --warn: #f28b82; --ok: #6fcf87; --none: #4a5259;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #13161a; --surface: #1b1f24; --surface-2: #20252b;
+    --ink: #e9ece9; --muted: #99a39d; --line: #2d343b; --line-soft: #242a30;
+    --a: #4fb8ab; --b: #e09050; --accent: #8fb0d4; --warn: #f28b82; --ok: #6fcf87; --none: #4a5259;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body);
+         font-size: 15px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 18px 16px 64px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  header h1 { font-size: 24px; letter-spacing: -0.015em; }
+  .estado { margin-left: auto; display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); }
+  .estado b { color: var(--ink); font-weight: 600; }
+  .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--none); flex: none; }
+  .punto.ok { background: var(--ok); } .punto.mal { background: var(--warn); }
+  .punto.trabaja { background: var(--accent); }
+
+  .panelcard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .semana-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .semana-nav h2 { font-size: 16px; font-weight: 500; flex: 1; }
+  .semana-nav h2 span { color: var(--muted); font-weight: 400; font-family: var(--body); font-size: 14px; }
+  .navbtn { background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px;
+            width: 34px; height: 34px; display: grid; place-items: center; font-size: 17px; line-height: 1; }
+  .navbtn:hover { border-color: var(--accent); }
+  .navbtn[disabled] { opacity: .35; cursor: default; }
+
+  .bar { display: flex; height: 30px; border-radius: 8px; overflow: hidden; background: var(--line-soft); }
+  .bar > div { display: grid; place-items: center; font-size: 12.5px; font-weight: 600; color: #fff;
+               min-width: 0; overflow: hidden; white-space: nowrap; }
+  .bar .seg-a { background: var(--a); } .bar .seg-b { background: var(--b); }
+  .bar .seg-0 { background: var(--none); }
+  .bar-lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 10px 0 5px; }
+  .bar-lbl b { color: var(--ink); font-weight: 600; }
+  .leyenda { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 13px; }
+  .leyenda div { display: flex; align-items: center; gap: 7px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+  .dot.a { background: var(--a); } .dot.b { background: var(--b); } .dot.n { background: var(--none); }
+  .sub { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+  nav.tabs { display: flex; gap: 6px; margin: 18px 0 14px; flex-wrap: wrap; }
+  nav.tabs button { background: transparent; border: 1px solid var(--line); border-radius: 999px;
+                    padding: 7px 15px; font-size: 14px; font-weight: 500; color: var(--muted); }
+  nav.tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .panel[hidden] { display: none; }
+
+  .zona { margin-bottom: 18px; }
+  .zona-h { display: flex; align-items: baseline; gap: 10px; padding: 0 2px 7px;
+            border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .zona-h h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; font-weight: 500; }
+  .zona-h .z-min { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+  .fila { display: flex; align-items: center; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--line-soft); }
+  .fila.omit .f-nombre { text-decoration: line-through; color: var(--muted); }
+  .f-main { flex: 1; min-width: 0; }
+  .f-nombre { font-size: 14.5px; }
+  .f-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .asig { border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px;
+          padding: 4px 11px; font-size: 12.5px; font-weight: 600; white-space: nowrap; flex: none; }
+  .asig.p-a { background: var(--a); border-color: var(--a); color: #fff; }
+  .asig.p-b { background: var(--b); border-color: var(--b); color: #fff; }
+  .asig.p-amb { background: linear-gradient(100deg, var(--a) 50%, var(--b) 50%); border-color: transparent;
+                color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .asig.p-no { color: var(--muted); }
+  .slots { display: flex; gap: 4px; flex: none; flex-wrap: wrap; max-width: 140px; justify-content: flex-end; }
+  .slot { width: 25px; height: 25px; border-radius: 50%; border: 1.5px dashed var(--line);
+          background: var(--surface-2); display: grid; place-items: center;
+          font-size: 10.5px; font-weight: 700; color: var(--muted); padding: 0; }
+  .slot.hecho { border-style: solid; color: #fff; }
+  .slot.hecho.p-a { background: var(--a); border-color: var(--a); }
+  .slot.hecho.p-b { background: var(--b); border-color: var(--b); }
+  .f-omit { background: none; border: none; color: var(--muted); font-size: 16px; padding: 2px 4px; flex: none; opacity: .5; }
+  .f-omit:hover { opacity: 1; }
+
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .btn { background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+         padding: 8px 14px; font-size: 13.5px; font-weight: 500; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primario { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn[disabled] { opacity: .45; cursor: default; }
+
+  .tabla-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 520px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line-soft); }
+  th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  td.n, th.n { text-align: right; }
+  .inp { background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px;
+         padding: 5px 8px; font: inherit; color: inherit; width: 100%; }
+  .inp.mini { width: 68px; text-align: right; }
+  .pct { font-weight: 600; }
+
+  .hist-fila { padding: 13px 2px; border-bottom: 1px solid var(--line-soft); }
+  .hist-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 7px; font-size: 13.5px; }
+  .hist-top span { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+
+  .aviso { background: var(--surface-2); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+           border-radius: 0 10px 10px 0; padding: 12px 15px; font-size: 13.5px; margin-bottom: 14px; }
+  .aviso.malo { border-left-color: var(--warn); }
+  .aviso p { margin: 0 0 8px; } .aviso p:last-child { margin-bottom: 0; }
+  .aviso ol { margin: 8px 0 0; padding-left: 20px; } .aviso li { margin-bottom: 5px; }
+  .aviso code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .vacio { text-align: center; padding: 34px 16px; color: var(--muted); font-size: 14px; }
+  .form-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .form-fila .inp { width: auto; flex: 1; min-width: 180px; }
+  a { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  @media (max-width: 560px) {
+    .fila { flex-wrap: wrap; }
+    .f-main { flex-basis: 100%; }
+    .slots { max-width: none; margin-left: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Reparto de casa</h1>
+    <div class="estado" id="estado"><span class="punto" id="punto"></span><span id="estado-txt">Cargando…</span></div>
+  </header>
+
+  <div id="avisos"></div>
+
+  <section class="panelcard" id="resumen">
+    <div class="semana-nav">
+      <button class="navbtn" id="prev" type="button" aria-label="Semana anterior">←</button>
+      <h2 id="sem-titulo">Cargando…</h2>
+      <button class="navbtn" id="next" type="button" aria-label="Semana siguiente">→</button>
+      <button class="navbtn" id="hoy" type="button" aria-label="Volver a esta semana" title="Esta semana">·</button>
+    </div>
+    <div class="bar-lbl"><span>Hecho hasta ahora</span><b id="hecho-tot">—</b></div>
+    <div class="bar" id="bar-hecho"></div>
+    <div class="bar-lbl" style="margin-top:14px"><span>Repartido para esta semana</span><b id="asig-tot">—</b></div>
+    <div class="bar" id="bar-asig"></div>
+    <div class="leyenda" id="leyenda"></div>
+    <p class="sub" id="sub-resumen"></p>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-semana" aria-selected="true" aria-controls="p-semana" type="button">Esta semana</button>
+    <button role="tab" id="tab-tareas" aria-selected="false" aria-controls="p-tareas" type="button">Tareas y minutos</button>
+    <button role="tab" id="tab-hist" aria-selected="false" aria-controls="p-hist" type="button">Historial</button>
+    <button role="tab" id="tab-ajustes" aria-selected="false" aria-controls="p-ajustes" type="button">Mi móvil</button>
+  </nav>
+
+  <section class="panel" id="p-semana" role="tabpanel" aria-labelledby="tab-semana">
+    <div class="acciones">
+      <button class="btn primario" id="repartir" type="button">Repartir equilibrado</button>
+      <button class="btn" id="vaciar" type="button">Quitar el reparto</button>
+    </div>
+    <div id="lista"></div>
+  </section>
+
+  <section class="panel" id="p-tareas" role="tabpanel" aria-labelledby="tab-tareas" hidden>
+    <div class="aviso">
+      Los minutos son una estimación, y de ellos sale el % de cada tarea. Si a alguno le parece que
+      una tarea lleva más o menos tiempo del que pone, se cambia aquí y todo el reparto se recalcula
+      solo. Discutir sobre minutos es más fácil que discutir sobre porcentajes.
+    </div>
+    <div class="acciones"><button class="btn" id="nueva" type="button">Añadir tarea</button></div>
+    <div class="tabla-wrap"><table id="tabla-tareas"></table></div>
+  </section>
+
+  <section class="panel" id="p-hist" role="tabpanel" aria-labelledby="tab-hist" hidden>
+    <div class="aviso">
+      Lo que se marcó cada semana, para mirarlo juntos y ajustar. Cuenta quien marca la tarea,
+      no a quien estaba asignada.
+    </div>
+    <div id="hist"></div>
+  </section>
+
+  <section class="panel" id="p-ajustes" role="tabpanel" aria-labelledby="tab-ajustes" hidden>
+    <div id="ajustes"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============ configuración ============
+     Se deduce del propio enlace de GitHub Pages. Solo hay que tocar esto si la
+     página no se sirve desde github.io. */
+  var REPO = (function () {
+    var h = location.hostname, p = location.pathname.split("/").filter(Boolean);
+    if (/\.github\.io$/i.test(h)) {
+      var o = h.replace(/\.github\.io$/i, "");
+      return { owner: o, repo: p.length ? p[0] : h, rama: "main" };
+    }
+    return { owner: "sibaez94-netizen", repo: "reparto-casa", rama: "main" };
+  })();
+  var RUTAS = ["docs/datos.json", "datos.json"];
+  var RUTA = RUTAS[0];
+  var API = "https://api.github.com";
+  var ZONAS = ["Lavandería", "Cocina", "Baño", "Salón", "Comedor", "Suelos", "Habitación", "Vestidor"];
+  var MS_SONDEO = 25000;
+
+  /* ============ estado ============ */
+  var D = { version: 1, personas: [], tareas: [], semanas: {} };
+  var sha = null, token = null, yo = null;
+  var offset = 0, tab = "semana", cargado = false;
+  var cola = [], escribiendo = false, temporizador = null, confirmando = null, trabajando = false;
+  var estadoRed = { clase: "", txt: "" };
+
+  /* ============ utilidades ============ */
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt !== undefined && txt !== null) n.textContent = String(txt);
+    return n;
+  }
+  function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+  function hhmm(min) {
+    var m = Math.round(min || 0);
+    if (m < 60) return m + " min";
+    var h = Math.floor(m / 60), r = m % 60;
+    return r ? h + " h " + r + " min" : h + " h";
+  }
+  function pct(part, total) { return total > 0 ? Math.round((part / total) * 100) : 0; }
+  function lunesDe(off) {
+    var n = new Date(), dow = n.getDay() || 7;
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate() - dow + 1 + off * 7);
+  }
+  function idSemana(lunes) {
+    var t = new Date(Date.UTC(lunes.getFullYear(), lunes.getMonth(), lunes.getDate()));
+    var dow = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - dow);
+    var ini = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    var sem = Math.ceil((((t - ini) / 86400000) + 1) / 7);
+    return t.getUTCFullYear() + "-S" + (sem < 10 ? "0" + sem : sem);
+  }
+  var MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  function rangoSemana(lunes) {
+    var dom = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6);
+    return lunes.getDate() + " " + MES[lunes.getMonth()] + " – " + dom.getDate() + " " + MES[dom.getMonth()];
+  }
+  function semActual() { return idSemana(lunesDe(offset)); }
+  function carga(t) { return (Number(t.minutos) || 0) * (Number(t.veces) || 1); }
+  function tareaPorId(id) {
+    for (var i = 0; i < D.tareas.length; i++) if (D.tareas[i].id === id) return D.tareas[i];
+    return null;
+  }
+  function persona(id) {
+    for (var i = 0; i < D.personas.length; i++) if (D.personas[i].id === id) return D.personas[i];
+    return null;
+  }
+  function idxDe(id) {
+    for (var i = 0; i < D.personas.length; i++) if (D.personas[i].id === id) return i;
+    return -1;
+  }
+  function claseDe(id) { var i = idxDe(id); return i < 0 ? "p-no" : (i === 0 ? "p-a" : "p-b"); }
+  function nombreDe(id) { var p = persona(id); return p ? p.nombre : "Alguien"; }
+  function inicial(id) { var p = persona(id); return p ? p.nombre.slice(0, 1).toUpperCase() : "?"; }
+  function filaDe(sem, tid) {
+    var s = D.semanas[sem];
+    return (s && s[tid]) || { asignado: null, hechos: [], omitida: false };
+  }
+  function aviso(txt, malo) {
+    var d = el("div", "aviso" + (malo ? " malo" : ""), txt);
+    $("avisos").appendChild(d);
+    return d;
+  }
+
+  /* ============ base64 con acentos ============ */
+  function aB64(txt) {
+    var bytes = new TextEncoder().encode(txt), bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+  function deB64(b64) {
+    var bin = atob(String(b64).replace(/\s/g, ""));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  /* ============ GitHub ============ */
+  function cabeceras() {
+    var h = { "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    if (token) h["Authorization"] = "Bearer " + token;
+    return h;
+  }
+  function urlContenido(ruta) {
+    return API + "/repos/" + REPO.owner + "/" + REPO.repo + "/contents/" + ruta;
+  }
+
+  /* Lee con token (siempre al día y trae el sha). Sin token lee el archivo
+     que sirve Pages, que puede ir unos minutos por detrás. */
+  async function leerRemoto() {
+    if (token) {
+      for (var i = 0; i < RUTAS.length; i++) {
+        var r = await fetch(urlContenido(RUTAS[i]) + "?ref=" + REPO.rama + "&t=" + Date.now(),
+          { headers: cabeceras(), cache: "no-store" });
+        if (r.status === 404) continue;
+        if (!r.ok) throw { estado: r.status, msg: await textoError(r) };
+        var j = await r.json();
+        RUTA = RUTAS[i];
+        return { datos: JSON.parse(deB64(j.content)), sha: j.sha };
+      }
+      throw { estado: 404, msg: "No se encuentra el archivo de datos en el repositorio." };
+    }
+    var res = await fetch("datos.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw { estado: res.status, msg: "No se ha podido leer datos.json" };
+    return { datos: await res.json(), sha: null };
+  }
+
+  async function textoError(r) {
+    try { var j = await r.json(); return j.message || ""; } catch (e) { return ""; }
+  }
+
+  async function escribirRemoto(cuerpo, shaActual, mensaje) {
+    var r = await fetch(urlContenido(RUTA), {
+      method: "PUT",
+      headers: Object.assign({ "Content-Type": "application/json" }, cabeceras()),
+      body: JSON.stringify({
+        message: mensaje, content: aB64(cuerpo), sha: shaActual || undefined, branch: REPO.rama
+      })
+    });
+    if (!r.ok) throw { estado: r.status, msg: await textoError(r) };
+    var j = await r.json();
+    return j.content ? j.content.sha : null;
+  }
+
+  /* ============ operaciones ============ */
+  function hueco(datos, sem, tid) {
+    if (!datos.semanas[sem]) datos.semanas[sem] = {};
+    if (!datos.semanas[sem][tid]) datos.semanas[sem][tid] = { asignado: null, hechos: [], omitida: false };
+    return datos.semanas[sem][tid];
+  }
+  function aplicar(datos, op) {
+    var f, i;
+    if (op.t === "asig") { hueco(datos, op.sem, op.tid).asignado = op.val; }
+    else if (op.t === "marca") {
+      f = hueco(datos, op.sem, op.tid);
+      for (i = 0; i < f.hechos.length; i++) if (f.hechos[i].id === op.id) return;
+      f.hechos.push({ id: op.id, p: op.p, t: op.cuando });
+    }
+    else if (op.t === "desmarca") {
+      f = hueco(datos, op.sem, op.tid);
+      f.hechos = f.hechos.filter(function (h) { return h.id !== op.id; });
+    }
+    else if (op.t === "omit") { hueco(datos, op.sem, op.tid).omitida = op.val; }
+    else if (op.t === "tarea") {
+      for (i = 0; i < datos.tareas.length; i++) {
+        if (datos.tareas[i].id === op.tid) { Object.assign(datos.tareas[i], op.campos); return; }
+      }
+    }
+    else if (op.t === "nueva") {
+      for (i = 0; i < datos.tareas.length; i++) if (datos.tareas[i].id === op.tarea.id) return;
+      datos.tareas.push(JSON.parse(JSON.stringify(op.tarea)));
+    }
+    else if (op.t === "borra") {
+      datos.tareas = datos.tareas.filter(function (t) { return t.id !== op.tid; });
+    }
+  }
+
+  function hacer(op) {
+    if (!puedeEscribir()) return;
+    aplicar(D, op);
+    cola.push(op);
+    render();
+    programarGuardado();
+  }
+
+  function puedeEscribir() { return !!(token && yo); }
+
+  function programarGuardado() {
+    if (temporizador) clearTimeout(temporizador);
+    marcarEstado("trabaja", "Guardando…");
+    temporizador = setTimeout(guardar, 1200);
+  }
+
+  function podar(datos) {
+    // Conserva las últimas 30 semanas, para que el archivo no crezca sin fin.
+    var claves = Object.keys(datos.semanas).sort();
+    while (claves.length > 30) { delete datos.semanas[claves.shift()]; }
+  }
+
+  async function guardar() {
+    if (escribiendo || !cola.length || !puedeEscribir()) return;
+    escribiendo = true;
+    marcarEstado("trabaja", "Guardando…");
+    var ok = false;
+
+    for (var intento = 0; intento < 3 && !ok; intento++) {
+      podar(D);
+      var n = cola.length;
+      var cuerpo = JSON.stringify(D, null, 1);
+      try {
+        sha = await escribirRemoto(cuerpo, sha, "Reparto: " + n + (n === 1 ? " cambio" : " cambios") + " de " + (yo || "?"));
+        cola.splice(0, n);
+        ok = true;
+      } catch (e) {
+        if (e.estado === 409 || e.estado === 422) {
+          // Alguien ha escrito antes. Releemos y volvemos a aplicar lo nuestro.
+          try {
+            var fresco = await leerRemoto();
+            cola.forEach(function (op) { aplicar(fresco.datos, op); });
+            D = fresco.datos; sha = fresco.sha;
+            render();
+          } catch (e2) { break; }
+        } else if (e.estado === 401 || e.estado === 403) {
+          marcarEstado("mal", "Token rechazado");
+          escribiendo = false;
+          mostrarAvisoToken(e.msg);
+          return;
+        } else { break; }
+      }
+    }
+
+    escribiendo = false;
+    if (ok) {
+      marcarEstado("ok", cola.length ? "Guardando…" : "Guardado");
+      if (cola.length) programarGuardado();
+    } else {
+      marcarEstado("mal", "No se ha podido guardar");
+      if (temporizador) clearTimeout(temporizador);
+      temporizador = setTimeout(guardar, 8000);
+    }
+  }
+
+  function marcarEstado(clase, txt) {
+    estadoRed = { clase: clase, txt: txt };
+    $("punto").className = "punto " + clase;
+    $("estado-txt").textContent = txt + (yo ? " · eres " + yo : "");
+  }
+
+  /* ============ cálculo ============ */
+  function totales() {
+    var sem = semActual();
+    var r = { hecho: {}, asig: {}, hechoTot: 0, asigTot: 0, sinAsig: 0, total: 0 };
+    D.personas.forEach(function (p) { r.hecho[p.id] = 0; r.asig[p.id] = 0; });
+
+    D.tareas.forEach(function (t) {
+      var f = filaDe(sem, t.id);
+      if (f.omitida) return;
+      var c = carga(t);
+      r.total += c;
+      var a = f.asignado || null;
+      if (a === "ambos" && D.personas.length) {
+        D.personas.forEach(function (p) { r.asig[p.id] += c / D.personas.length; });
+        r.asigTot += c;
+      } else if (a && r.asig[a] !== undefined) { r.asig[a] += c; r.asigTot += c; }
+      else { r.sinAsig += c; }
+      (f.hechos || []).forEach(function (h) {
+        if (r.hecho[h.p] !== undefined) { r.hecho[h.p] += Number(t.minutos) || 0; r.hechoTot += Number(t.minutos) || 0; }
+      });
+    });
+    return r;
+  }
+
+  function pintarBarra(nodo, valores, total, etiquetaResto) {
+    nodo.textContent = "";
+    if (total <= 0) { nodo.appendChild(el("div", "seg-0", "")); return; }
+    var usado = 0;
+    D.personas.forEach(function (p, i) {
+      var v = valores[p.id] || 0;
+      if (v <= 0) return;
+      usado += v;
+      var seg = el("div", i === 0 ? "seg-a" : "seg-b", pct(v, total) >= 11 ? hhmm(v) : "");
+      seg.style.flex = v;
+      seg.title = p.nombre + ": " + hhmm(v);
+      nodo.appendChild(seg);
+    });
+    var resto = total - usado;
+    if (resto > 0.5) {
+      var s = el("div", "seg-0", pct(resto, total) >= 13 ? (etiquetaResto || "") + hhmm(resto) : "");
+      s.style.flex = resto;
+      s.title = (etiquetaResto || "Pendiente: ") + hhmm(resto);
+      nodo.appendChild(s);
+    }
+  }
+
+  function pintarResumen() {
+    var t = totales();
+    pintarBarra($("bar-hecho"), t.hecho, t.total, "falta ");
+    pintarBarra($("bar-asig"), t.asig, t.total, "sin asignar ");
+    $("hecho-tot").textContent = hhmm(t.hechoTot) + " de " + hhmm(t.total);
+    $("asig-tot").textContent = t.sinAsig > 0.5 ? hhmm(t.sinAsig) + " sin repartir" : "todo repartido";
+
+    var ley = $("leyenda");
+    ley.textContent = "";
+    D.personas.forEach(function (p, i) {
+      var d = el("div");
+      d.appendChild(el("span", "dot " + (i === 0 ? "a" : "b")));
+      var hecho = t.hecho[p.id] || 0, asig = t.asig[p.id] || 0;
+      d.appendChild(el("span", null, p.nombre + ": ha hecho " + hhmm(hecho) + ", el " +
+        pct(hecho, t.hechoTot) + "% de todo lo que se ha hecho · le tocan " + hhmm(asig)));
+      ley.appendChild(d);
+    });
+    if (t.sinAsig > 0.5) {
+      var dn = el("div");
+      dn.appendChild(el("span", "dot n"));
+      dn.appendChild(el("span", null, "Sin asignar: " + hhmm(t.sinAsig)));
+      ley.appendChild(dn);
+    }
+
+    var sub = "";
+    if (!cargado) sub = "";
+    else if (t.hechoTot === 0) sub = "Todavía no hay nada marcado esta semana. La semana completa son " + hhmm(t.total) + ".";
+    else {
+      var orden = D.personas.slice().sort(function (x, y) { return (t.hecho[y.id] || 0) - (t.hecho[x.id] || 0); });
+      var dif = (t.hecho[orden[0].id] || 0) - (t.hecho[orden[orden.length - 1].id] || 0);
+      sub = dif < 15 ? "Esta semana vais parejos: " + hhmm(dif) + " de diferencia."
+        : orden[0].nombre + " lleva " + hhmm(dif) + " más que " + orden[orden.length - 1].nombre + ".";
+      sub += " Queda por hacer " + hhmm(t.total - t.hechoTot) + ".";
+    }
+    $("sub-resumen").textContent = sub;
+  }
+
+  /* ============ acciones ============ */
+  function cicloAsignado(tid) {
+    var sem = semActual(), f = filaDe(sem, tid);
+    var orden = D.personas.map(function (p) { return p.id; });
+    if (D.personas.length > 1) orden.push("ambos");
+    orden.push(null);
+    var i = orden.indexOf(f.asignado || null);
+    hacer({ t: "asig", sem: sem, tid: tid, val: orden[(i + 1) % orden.length] });
+  }
+  function tocarSlot(tid, idx) {
+    var sem = semActual(), f = filaDe(sem, tid), h = f.hechos[idx];
+    if (h) {
+      if (h.p !== yo) return;           // lo marcó el otro: que lo quite quien lo puso
+      hacer({ t: "desmarca", sem: sem, tid: tid, id: h.id });
+    } else {
+      hacer({ t: "marca", sem: sem, tid: tid, id: uid(), p: yo, cuando: new Date().toISOString() });
+    }
+  }
+  function alternarOmitir(tid) {
+    var sem = semActual();
+    hacer({ t: "omit", sem: sem, tid: tid, val: !filaDe(sem, tid).omitida });
+  }
+  function repartirEquilibrado() {
+    if (D.personas.length < 2) return;
+    trabajando = true;
+    var sem = semActual(), acum = {};
+    D.personas.forEach(function (p) { acum[p.id] = 0; });
+    D.tareas.filter(function (t) { return !filaDe(sem, t.id).omitida; })
+      .sort(function (a, b) { return carga(b) - carga(a); })
+      .forEach(function (t) {
+        var quien = D.personas[0].id;
+        D.personas.forEach(function (p) { if (acum[p.id] < acum[quien]) quien = p.id; });
+        acum[quien] += carga(t);
+        hacer({ t: "asig", sem: sem, tid: t.id, val: quien });
+      });
+    trabajando = false;
+    render();
+  }
+  function vaciarReparto() {
+    var sem = semActual();
+    D.tareas.forEach(function (t) {
+      if (filaDe(sem, t.id).asignado) hacer({ t: "asig", sem: sem, tid: t.id, val: null });
+    });
+  }
+
+  /* ============ semana ============ */
+  function pintarSemana() {
+    var cont = $("lista"), sem = semActual();
+    cont.textContent = "";
+    if (!D.tareas.length) {
+      cont.appendChild(el("p", "vacio", cargado ? "Todavía no hay tareas." : "Cargando las tareas de la casa…"));
+      return;
+    }
+    var porZona = {};
+    D.tareas.forEach(function (t) { (porZona[t.zona] = porZona[t.zona] || []).push(t); });
+    var zonas = ZONAS.filter(function (z) { return porZona[z]; })
+      .concat(Object.keys(porZona).filter(function (z) { return ZONAS.indexOf(z) < 0; }));
+
+    zonas.forEach(function (z) {
+      var items = porZona[z].sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
+      var sec = el("section", "zona"), h = el("div", "zona-h");
+      h.appendChild(el("h3", null, z));
+      var minZona = items.reduce(function (s, t) { return s + (filaDe(sem, t.id).omitida ? 0 : carga(t)); }, 0);
+      h.appendChild(el("span", "z-min", hhmm(minZona) + " a la semana"));
+      sec.appendChild(h);
+
+      items.forEach(function (t) {
+        var f = filaDe(sem, t.id);
+        var fila = el("div", "fila" + (f.omitida ? " omit" : ""));
+        var main = el("div", "f-main");
+        main.appendChild(el("div", "f-nombre", t.nombre));
+        var veces = Number(t.veces) || 1;
+        main.appendChild(el("div", "f-meta", hhmm(t.minutos) +
+          (veces > 1 ? " × " + veces + " a la semana" : "") + " · " + hhmm(carga(t)) + " en total"));
+        fila.appendChild(main);
+
+        var btnA = el("button", "asig " + (f.asignado === "ambos" ? "p-amb" : claseDe(f.asignado)));
+        btnA.type = "button";
+        btnA.textContent = f.asignado === "ambos" ? "Los dos" : (f.asignado ? nombreDe(f.asignado) : "Sin asignar");
+        btnA.title = "Cambiar a quién le toca";
+        btnA.disabled = !puedeEscribir() || !!f.omitida;
+        btnA.onclick = function () { cicloAsignado(t.id); };
+        fila.appendChild(btnA);
+
+        var slots = el("div", "slots");
+        for (var i = 0; i < veces; i++) {
+          (function (idx) {
+            var h2 = f.hechos[idx];
+            var b = el("button", "slot" + (h2 ? " hecho " + claseDe(h2.p) : ""));
+            b.type = "button";
+            b.textContent = h2 ? inicial(h2.p) : "";
+            b.title = h2 ? "Lo hizo " + nombreDe(h2.p) : "Marcar como hecho";
+            b.setAttribute("aria-label", b.title);
+            b.disabled = !puedeEscribir() || !!f.omitida;
+            b.onclick = function () { tocarSlot(t.id, idx); };
+            slots.appendChild(b);
+          })(i);
+        }
+        fila.appendChild(slots);
+
+        var om = el("button", "f-omit", f.omitida ? "↺" : "×");
+        om.type = "button";
+        om.title = f.omitida ? "Volver a contar esta semana" : "Esta semana no toca";
+        om.setAttribute("aria-label", om.title);
+        om.disabled = !puedeEscribir();
+        om.onclick = function () { alternarOmitir(t.id); };
+        fila.appendChild(om);
+        sec.appendChild(fila);
+      });
+      cont.appendChild(sec);
+    });
+  }
+
+  /* ============ tareas ============ */
+  function pintarTareas() {
+    var tbl = $("tabla-tareas");
+    tbl.textContent = "";
+    var total = D.tareas.reduce(function (s, t) { return s + carga(t); }, 0);
+
+    var thead = el("thead"), tr = el("tr");
+    ["Tarea", "Zona", "Min.", "Veces/sem", "Semana", "%", ""].forEach(function (h, i) {
+      tr.appendChild(el("th", i >= 2 && i <= 5 ? "n" : null, h));
+    });
+    thead.appendChild(tr); tbl.appendChild(thead);
+
+    var tb = el("tbody");
+    D.tareas.slice().sort(function (a, b) {
+      var za = ZONAS.indexOf(a.zona), zb = ZONAS.indexOf(b.zona);
+      if (za !== zb) return (za < 0 ? 99 : za) - (zb < 0 ? 99 : zb);
+      return (a.orden || 0) - (b.orden || 0);
+    }).forEach(function (t) {
+      var row = el("tr");
+
+      var tdN = el("td"), iN = el("input", "inp");
+      iN.value = t.nombre; iN.disabled = !puedeEscribir();
+      iN.onchange = function () { if (iN.value.trim()) hacer({ t: "tarea", tid: t.id, campos: { nombre: iN.value.trim() } }); };
+      tdN.appendChild(iN); row.appendChild(tdN);
+
+      var tdZ = el("td"), sZ = el("select", "inp");
+      sZ.disabled = !puedeEscribir();
+      var zs = ZONAS.slice();
+      if (zs.indexOf(t.zona) < 0) zs.push(t.zona);
+      zs.forEach(function (z) {
+        var o = el("option", null, z); o.value = z;
+        if (z === t.zona) o.selected = true;
+        sZ.appendChild(o);
+      });
+      sZ.onchange = function () { hacer({ t: "tarea", tid: t.id, campos: { zona: sZ.value } }); };
+      tdZ.appendChild(sZ); row.appendChild(tdZ);
+
+      var tdM = el("td", "n"), iM = el("input", "inp mini");
+      iM.type = "number"; iM.min = "1"; iM.step = "1"; iM.value = t.minutos; iM.disabled = !puedeEscribir();
+      iM.onchange = function () {
+        var v = Math.max(1, Math.round(Number(iM.value) || 1));
+        iM.value = v; hacer({ t: "tarea", tid: t.id, campos: { minutos: v } });
+      };
+      tdM.appendChild(iM); row.appendChild(tdM);
+
+      var tdV = el("td", "n"), iV = el("input", "inp mini");
+      iV.type = "number"; iV.min = "1"; iV.max = "21"; iV.step = "1"; iV.value = t.veces || 1; iV.disabled = !puedeEscribir();
+      iV.onchange = function () {
+        var v = Math.min(21, Math.max(1, Math.round(Number(iV.value) || 1)));
+        iV.value = v; hacer({ t: "tarea", tid: t.id, campos: { veces: v } });
+      };
+      tdV.appendChild(iV); row.appendChild(tdV);
+
+      row.appendChild(el("td", "n num", hhmm(carga(t))));
+      row.appendChild(el("td", "n num pct", pct(carga(t), total) + "%"));
+
+      var tdX = el("td", "n"), bx = el("button", "f-omit", confirmando === t.id ? "¿Seguro?" : "🗑");
+      bx.type = "button"; bx.title = "Borrar la tarea";
+      bx.setAttribute("aria-label", "Borrar " + t.nombre);
+      bx.disabled = !puedeEscribir();
+      if (confirmando === t.id) bx.style.color = "var(--warn)";
+      bx.onclick = function () {
+        if (confirmando !== t.id) { confirmando = t.id; pintarTareas(); return; }
+        confirmando = null;
+        hacer({ t: "borra", tid: t.id });
+      };
+      tdX.appendChild(bx); row.appendChild(tdX);
+      tb.appendChild(row);
+    });
+
+    var trT = el("tr");
+    trT.appendChild(el("td")); trT.appendChild(el("td")); trT.appendChild(el("td"));
+    trT.appendChild(el("td", "n", "Total"));
+    var tdTot = el("td", "n num", hhmm(total)); tdTot.style.fontWeight = "700";
+    trT.appendChild(tdTot);
+    trT.appendChild(el("td", "n num", "100%"));
+    trT.appendChild(el("td"));
+    tb.appendChild(trT);
+    tbl.appendChild(tb);
+  }
+
+  function nuevaTarea() {
+    var max = D.tareas.reduce(function (m, t) { return Math.max(m, t.orden || 0); }, 0);
+    hacer({ t: "nueva", tarea: { id: "x" + uid(), nombre: "Tarea nueva", zona: ZONAS[0], minutos: 10, veces: 1, orden: max + 1 } });
+  }
+
+  /* ============ historial ============ */
+  function pintarHistorial() {
+    var cont = $("hist");
+    cont.textContent = "";
+    var claves = Object.keys(D.semanas).sort().reverse()
+      .filter(function (k) { return k !== idSemana(lunesDe(0)); });
+    if (!claves.length) {
+      cont.appendChild(el("p", "vacio", "Todavía no hay semanas anteriores guardadas."));
+      return;
+    }
+    claves.slice(0, 20).forEach(function (sem) {
+      var agg = { hecho: {}, total: 0 }, hechoTot = 0;
+      D.personas.forEach(function (p) { agg.hecho[p.id] = 0; });
+      D.tareas.forEach(function (t) {
+        var f = (D.semanas[sem] || {})[t.id];
+        if (!f || f.omitida) return;
+        agg.total += carga(t);
+        (f.hechos || []).forEach(function (h) {
+          if (agg.hecho[h.p] !== undefined) { agg.hecho[h.p] += Number(t.minutos) || 0; hechoTot += Number(t.minutos) || 0; }
+        });
+      });
+      var d = el("div", "hist-fila"), top = el("div", "hist-top");
+      top.appendChild(el("b", null, sem.replace("-S", " · semana ")));
+      top.appendChild(el("span", null, D.personas.map(function (p) {
+        return p.nombre + " " + pct(agg.hecho[p.id] || 0, hechoTot) + "% (" + hhmm(agg.hecho[p.id] || 0) + ")";
+      }).join(" · ")));
+      d.appendChild(top);
+      var bar = el("div", "bar");
+      pintarBarra(bar, agg.hecho, agg.total, "sin hacer ");
+      d.appendChild(bar);
+      cont.appendChild(d);
+    });
+  }
+
+  /* ============ mi móvil ============ */
+  function pintarAjustes() {
+    var c = $("ajustes");
+    c.textContent = "";
+
+    var caja = el("div", "aviso");
+    if (token && yo) {
+      caja.appendChild(el("p", null, "Este móvil está conectado como " + yo + ". El token se guarda solo aquí, en este navegador."));
+      var f = el("div", "form-fila");
+      var b = el("button", "btn", "Desconectar este móvil");
+      b.type = "button";
+      b.onclick = function () {
+        try { localStorage.removeItem("rc_token"); localStorage.removeItem("rc_yo"); } catch (e) {}
+        token = null; yo = null;
+        marcarEstado("", "Solo mirando");
+        pintarAjustes(); render();
+      };
+      f.appendChild(b);
+      caja.appendChild(f);
+      c.appendChild(caja);
+    } else {
+      caja.appendChild(el("p", null, "Ahora mismo solo estás mirando. Para poder marcar tareas y cambiar minutos, conecta este móvil con un token tuyo de GitHub."));
+      var ol = el("ol");
+      [
+        "En GitHub, entra en Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.",
+        "En «Repository access» elige «Only select repositories» y marca solo " + REPO.owner + "/" + REPO.repo + ".",
+        "En «Repository permissions» pon Contents en «Read and write». Nada más.",
+        "Copia el token y pégalo aquí abajo. Se queda en este navegador y no se sube a ningún sitio."
+      ].forEach(function (p) { ol.appendChild(el("li", null, p)); });
+      caja.appendChild(ol);
+
+      var f2 = el("div", "form-fila");
+      var sel = el("select", "inp");
+      sel.style.flex = "0 0 auto"; sel.style.minWidth = "90px";
+      (D.personas.length ? D.personas : [{ id: "SIL", nombre: "SIL" }, { id: "LRC", nombre: "LRC" }])
+        .forEach(function (p) { var o = el("option", null, p.nombre); o.value = p.id; sel.appendChild(o); });
+      var inp = el("input", "inp");
+      inp.type = "password"; inp.placeholder = "github_pat_…"; inp.autocomplete = "off";
+      var ok = el("button", "btn primario", "Conectar");
+      ok.type = "button";
+      ok.onclick = async function () {
+        var v = inp.value.trim();
+        if (!v) { inp.focus(); return; }
+        ok.disabled = true; ok.textContent = "Comprobando…";
+        var anterior = token;
+        token = v;
+        try {
+          var r = await leerRemoto();
+          D = r.datos; sha = r.sha;
+          yo = sel.value;
+          try { localStorage.setItem("rc_token", v); localStorage.setItem("rc_yo", yo); } catch (e) {}
+          marcarEstado("ok", "Guardado");
+          pintarAjustes(); render();
+        } catch (e) {
+          token = anterior;
+          ok.disabled = false; ok.textContent = "Conectar";
+          var m = el("p", null, e.estado === 404
+            ? "El token no da acceso a " + REPO.owner + "/" + REPO.repo + ", o el repositorio no existe."
+            : "GitHub ha rechazado el token" + (e.msg ? ": " + e.msg : "."));
+          m.style.color = "var(--warn)";
+          f2.parentNode.appendChild(m);
+        }
+      };
+      f2.appendChild(sel); f2.appendChild(inp); f2.appendChild(ok);
+      caja.appendChild(f2);
+      c.appendChild(caja);
+    }
+
+    var info = el("div", "aviso");
+    info.appendChild(el("p", null, "Los datos están en " + REPO.owner + "/" + REPO.repo + ", en " + RUTA + ". El repositorio es público: cualquiera que dé con la dirección puede ver el reparto, pero solo quien tenga un token puede cambiarlo."));
+    info.appendChild(el("p", null, "Cada cambio es un commit, así que el historial de GitHub guarda quién cambió qué y cuándo, aunque la app solo enseñe las últimas 30 semanas."));
+    var a = el("a", null, "Ver el repositorio en GitHub");
+    a.href = "https://github.com/" + REPO.owner + "/" + REPO.repo;
+    a.target = "_blank"; a.rel = "noopener";
+    info.appendChild(a);
+    c.appendChild(info);
+  }
+
+  /* ============ render ============ */
+  function render() {
+    var lun = lunesDe(offset);
+    var tit = $("sem-titulo");
+    tit.textContent = offset === 0 ? "Esta semana " : (offset === -1 ? "Semana pasada " : (offset === 1 ? "Semana que viene " : "Semana "));
+    tit.appendChild(el("span", null, rangoSemana(lun)));
+    $("hoy").disabled = offset === 0;
+
+    var ok = puedeEscribir();
+    $("repartir").disabled = !ok || trabajando || D.personas.length < 2;
+    $("vaciar").disabled = !ok;
+    $("nueva").disabled = !ok;
+
+    pintarResumen();
+    if (tab === "semana") pintarSemana();
+    else if (tab === "tareas") pintarTareas();
+    else if (tab === "hist") pintarHistorial();
+    else if (tab === "ajustes") pintarAjustes();
+  }
+
+  function irA(n) {
+    tab = n;
+    [["semana", "p-semana"], ["tareas", "p-tareas"], ["hist", "p-hist"], ["ajustes", "p-ajustes"]]
+      .forEach(function (par) {
+        $("tab-" + par[0]).setAttribute("aria-selected", par[0] === n ? "true" : "false");
+        $(par[1]).hidden = par[0] !== n;
+      });
+    render();
+  }
+
+  function mostrarAvisoToken(msg) {
+    $("avisos").textContent = "";
+    var a = aviso("", true);
+    a.appendChild(el("p", null, "GitHub ha rechazado el token de este móvil" + (msg ? " (" + msg + ")" : "") +
+      ". Lo más probable es que haya caducado. Haz uno nuevo y vuelve a conectarlo en «Mi móvil»."));
+    var b = el("button", "btn", "Ir a Mi móvil");
+    b.type = "button";
+    b.onclick = function () { irA("ajustes"); };
+    a.appendChild(b);
+  }
+
+  /* ============ sondeo ============ */
+  async function sondear() {
+    if (escribiendo || cola.length || document.hidden) return;
+    try {
+      var r = await leerRemoto();
+      if (r.sha && r.sha === sha) return;
+      D = r.datos; sha = r.sha;
+      render();
+      if (estadoRed.clase === "mal") marcarEstado("ok", "Al día");
+    } catch (e) { /* se reintenta en el siguiente sondeo */ }
+  }
+
+  /* ============ arranque ============ */
+  $("prev").onclick = function () { offset--; render(); };
+  $("next").onclick = function () { offset++; render(); };
+  $("hoy").onclick = function () { offset = 0; render(); };
+  $("tab-semana").onclick = function () { irA("semana"); };
+  $("tab-tareas").onclick = function () { irA("tareas"); };
+  $("tab-hist").onclick = function () { irA("hist"); };
+  $("tab-ajustes").onclick = function () { irA("ajustes"); };
+  $("repartir").onclick = repartirEquilibrado;
+  $("vaciar").onclick = vaciarReparto;
+  $("nueva").onclick = nuevaTarea;
+  window.addEventListener("beforeunload", function (e) {
+    if (cola.length) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  try { token = localStorage.getItem("rc_token") || null; yo = localStorage.getItem("rc_yo") || null; } catch (e) {}
+  marcarEstado("", token ? "Cargando…" : "Solo mirando");
+  render();
+
+  (async function () {
+    try {
+      var r = await leerRemoto();
+      D = r.datos; sha = r.sha; cargado = true;
+      marcarEstado(token && yo ? "ok" : "", token && yo ? "Al día" : "Solo mirando");
+    } catch (e) {
+      cargado = true;
+      if (e.estado === 401 || e.estado === 403) mostrarAvisoToken(e.msg);
+      else aviso("No se han podido cargar los datos desde " + REPO.owner + "/" + REPO.repo +
+        (e.msg ? " (" + e.msg + ")" : "") + ". Se vuelve a intentar solo.", true);
+      marcarEstado("mal", "Sin datos");
+    }
+    render();
+    setInterval(sondear, MS_SONDEO);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) sondear(); });
+  })();
+})();
+</script>
+</body>
+</html>

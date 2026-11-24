@@ -1,0 +1,272 @@
+{
+ "version": 1,
+ "personas": [
+  {
+   "id": "SIL",
+   "nombre": "SIL"
+  },
+  {
+   "id": "LRC",
+   "nombre": "LRC"
+  }
+ ],
+ "tareas": [
+  {
+   "id": "lav1",
+   "nombre": "Poner y cargar la lavadora",
+   "zona": "Lavandería",
+   "minutos": 10,
+   "veces": 3,
+   "orden": 1
+  },
+  {
+   "id": "lav2",
+   "nombre": "Tender la ropa",
+   "zona": "Lavandería",
+   "minutos": 15,
+   "veces": 3,
+   "orden": 2
+  },
+  {
+   "id": "lav3",
+   "nombre": "Recoger la ropa, doblar y guardar",
+   "zona": "Lavandería",
+   "minutos": 20,
+   "veces": 2,
+   "orden": 3
+  },
+  {
+   "id": "coc1",
+   "nombre": "Fregar los cacharros",
+   "zona": "Cocina",
+   "minutos": 15,
+   "veces": 7,
+   "orden": 1
+  },
+  {
+   "id": "coc2",
+   "nombre": "Placa: quitar los fuegos, estropajo con jabonoso y retirar",
+   "zona": "Cocina",
+   "minutos": 20,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "coc3",
+   "nombre": "Limpiar las encimeras",
+   "zona": "Cocina",
+   "minutos": 8,
+   "veces": 2,
+   "orden": 3
+  },
+  {
+   "id": "coc4",
+   "nombre": "Bayeta a los armarios y a las puertas de abajo",
+   "zona": "Cocina",
+   "minutos": 12,
+   "veces": 1,
+   "orden": 4
+  },
+  {
+   "id": "coc5",
+   "nombre": "Puertas del frigorífico por fuera",
+   "zona": "Cocina",
+   "minutos": 5,
+   "veces": 1,
+   "orden": 5
+  },
+  {
+   "id": "coc6",
+   "nombre": "Frigorífico por dentro",
+   "zona": "Cocina",
+   "minutos": 15,
+   "veces": 1,
+   "orden": 6
+  },
+  {
+   "id": "coc7",
+   "nombre": "Limpiar el microondas",
+   "zona": "Cocina",
+   "minutos": 8,
+   "veces": 1,
+   "orden": 7
+  },
+  {
+   "id": "ban1",
+   "nombre": "Sanitarios: jabonoso con estropajo suave, bayeta y pasada de lejía",
+   "zona": "Baño",
+   "minutos": 25,
+   "veces": 1,
+   "orden": 1
+  },
+  {
+   "id": "ban2",
+   "nombre": "Espejo y mampara por fuera",
+   "zona": "Baño",
+   "minutos": 10,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "ban3",
+   "nombre": "Toallas y albornoces a lavar, cambiar toalla de manos y alfombra",
+   "zona": "Baño",
+   "minutos": 8,
+   "veces": 1,
+   "orden": 3
+  },
+  {
+   "id": "ban4",
+   "nombre": "Quitar el polvo de los rodapiés",
+   "zona": "Baño",
+   "minutos": 7,
+   "veces": 1,
+   "orden": 4
+  },
+  {
+   "id": "sal1",
+   "nombre": "Cambiar las fundas del sofá",
+   "zona": "Salón",
+   "minutos": 15,
+   "veces": 1,
+   "orden": 1
+  },
+  {
+   "id": "sal2",
+   "nombre": "Lavar las mantas",
+   "zona": "Salón",
+   "minutos": 10,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "sal3",
+   "nombre": "Polvo con bayeta húmeda: mesas, cómodas, marcos, estufa y sillones",
+   "zona": "Salón",
+   "minutos": 20,
+   "veces": 1,
+   "orden": 3
+  },
+  {
+   "id": "com1",
+   "nombre": "Despejar la mesa y darle spray de madera",
+   "zona": "Comedor",
+   "minutos": 10,
+   "veces": 1,
+   "orden": 1
+  },
+  {
+   "id": "com2",
+   "nombre": "Sillas con bayeta y oxígeno activo",
+   "zona": "Comedor",
+   "minutos": 12,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "com3",
+   "nombre": "Aspirar la alfombra",
+   "zona": "Comedor",
+   "minutos": 10,
+   "veces": 1,
+   "orden": 3
+  },
+  {
+   "id": "com4",
+   "nombre": "Marcos de las ventanas del comedor",
+   "zona": "Comedor",
+   "minutos": 8,
+   "veces": 1,
+   "orden": 4
+  },
+  {
+   "id": "com5",
+   "nombre": "Bayeta a la base del aspirador y a la Conga",
+   "zona": "Comedor",
+   "minutos": 5,
+   "veces": 1,
+   "orden": 5
+  },
+  {
+   "id": "com6",
+   "nombre": "Aspirar entre la mesa y la pared",
+   "zona": "Comedor",
+   "minutos": 5,
+   "veces": 1,
+   "orden": 6
+  },
+  {
+   "id": "sue1",
+   "nombre": "Aspirar salón, comedor, cocina y baño",
+   "zona": "Suelos",
+   "minutos": 20,
+   "veces": 1,
+   "orden": 1
+  },
+  {
+   "id": "sue2",
+   "nombre": "Fregar salón, comedor, cocina y baño",
+   "zona": "Suelos",
+   "minutos": 20,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "hab1",
+   "nombre": "Cambiar las sábanas y ponerlas a lavar",
+   "zona": "Habitación",
+   "minutos": 15,
+   "veces": 1,
+   "orden": 1
+  },
+  {
+   "id": "hab2",
+   "nombre": "Polvo en mesillas y marco de ventana",
+   "zona": "Habitación",
+   "minutos": 8,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "hab3",
+   "nombre": "Aspirar y fregar la habitación",
+   "zona": "Habitación",
+   "minutos": 12,
+   "veces": 1,
+   "orden": 3
+  },
+  {
+   "id": "hab4",
+   "nombre": "Bayeta al espejo",
+   "zona": "Habitación",
+   "minutos": 3,
+   "veces": 1,
+   "orden": 4
+  },
+  {
+   "id": "ves1",
+   "nombre": "Colocar la ropa y los zapatos",
+   "zona": "Vestidor",
+   "minutos": 20,
+   "veces": 1,
+   "orden": 1
+  },
+  {
+   "id": "ves2",
+   "nombre": "Aspirar y fregar el vestidor",
+   "zona": "Vestidor",
+   "minutos": 10,
+   "veces": 1,
+   "orden": 2
+  },
+  {
+   "id": "ves3",
+   "nombre": "Cambiar la colcha de la cama de invitados",
+   "zona": "Vestidor",
+   "minutos": 8,
+   "veces": 1,
+   "orden": 3
+  }
+ ],
+ "semanas": {}
+}
