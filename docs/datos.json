@@ -268,5 +268,13 @@
    "orden": 3
   }
  ],
- "semanas": {}
+ "semanas": {
+  "2026-S48": {
+   "lav1": {
+    "asignado": null,
+    "hechos": [],
+    "omitida": false
+   }
+  }
+ }
 }
